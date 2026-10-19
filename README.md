@@ -10,7 +10,7 @@ cageup opencode
 
 The command will eventually launch OpenCode inside a disposable worker, give it a run-scoped workspace lease, route approved API requests through the ZK egress gateway, and hold all host writes behind a promotion gate.
 
-> **Project status:** CageUP is currently a documentation, reproducibility, and npm package scaffold. The package entrypoint exists for early integration checks; the Daytona adapter, CageBridge, ZK gateway, promotion scanner, and operator console are not implemented yet.
+> **Project status:** CageUP now has its first TypeScript contracts and configuration loader. The Daytona adapter, CageBridge, ZK gateway, promotion scanner, and operator console are not implemented yet.
 
 ## Why CageUP exists
 
@@ -126,7 +126,8 @@ cageup opencode
 The current scaffold supports an early package smoke check:
 
 ```bash
-npx . doctor
+npm run build
+node dist/cli.js doctor
 ```
 
 All arguments after `--` should be forwarded to OpenCode:
@@ -210,10 +211,10 @@ Hash-chained events are tamper-evident evidence. They are not proof that a compr
 The package is configured for a future public npm release:
 
 - command name: `cageup`;
-- executable entrypoint: `src/cli.mjs`;
+- executable entrypoint: `dist/cli.js` built from `src/cli.ts`;
 - package contents are restricted through the `files` allowlist;
 - `LICENSE` is included;
-- `prepublishOnly` runs the offline checks;
+- `prepublishOnly` builds and runs the offline checks;
 - real provider credentials are not included in the package.
 
 Do not run `npm publish` until the runtime entrypoint is implemented, the package name has been checked on npm, repository metadata has been set, and a release version has been reviewed.

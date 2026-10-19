@@ -14,10 +14,10 @@
   "homepage": "https://github.com/Subho4531/CageUP#readme",
   "type": "module",
   "bin": {
-    "cageup": "./src/cli.mjs"
+    "cageup": "./dist/cli.js"
   },
   "files": [
-    "src",
+    "dist",
     "README.md",
     "LICENSE"
   ],
@@ -25,9 +25,14 @@
     "node": ">=22.23.3"
   },
   "scripts": {
-    "test": "node --test tests/docs.test.mjs",
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test tests/*.test.mjs",
     "check:docs": "node scripts/check-docs.mjs",
-    "pack:check": "npm pack --dry-run",
+    "pack:check": "npm run build && npm pack --dry-run",
     "prepublishOnly": "npm test && npm run check:docs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.29",
+    "typescript": "^5.9.3"
   }
 }

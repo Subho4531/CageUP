@@ -13,7 +13,8 @@ const requiredFiles = [
   '.nvmrc',
   'Makefile',
   'Dockerfile',
-  'LICENSE'
+  'LICENSE',
+  'tsconfig.json'
 ];
 
 for (const relativePath of requiredFiles) {

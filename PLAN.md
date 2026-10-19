@@ -2,9 +2,9 @@
 
 ## Status
 
-**Current phase:** documentation and reproducibility scaffold.
+**Current phase:** phase 1 — shared contracts and configuration.
 
-The repository currently defines the product boundary and demo contract. Runtime code is intentionally not started until the control-plane interfaces and security assumptions are agreed.
+The repository now contains the first provider-neutral TypeScript contracts, strict configuration loader, and compiled CLI entrypoint. Sandbox, bridge, gateway, and promotion behavior remain future phases.
 
 ## Product goal
 
@@ -78,6 +78,8 @@ Stores redacted, hash-chained run events such as lease grants, ZK requests, bloc
 - Preserve the pinned Node.js runtime and lockfile.
 
 **Exit condition:** all packages can import shared contracts without provider-specific types leaking into core policy code.
+
+**Status:** complete for the initial scaffold. Contracts live in `src/core/contracts.ts`; configuration validation lives in `src/core/config.ts`; `npm test` compiles and exercises them offline.
 
 ### 2. Local simulator
 

@@ -30,7 +30,7 @@ test('documentation scaffold passes the repository contract check', async () => 
 
 test('README documents the current not-yet-implemented runtime state', async () => {
   const readme = await readFile(resolve(root, 'README.md'), 'utf8');
-  assert.match(readme, /documentation, reproducibility, and npm package scaffold/);
+  assert.match(readme, /first TypeScript contracts and configuration loader/);
   assert.match(readme, /cageup opencode/);
   assert.match(readme, /ZK Key Injection/);
 });
