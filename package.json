@@ -2,6 +2,16 @@
   "name": "cageup",
   "version": "0.1.0",
   "description": "A governed execution control plane for autonomous coding agents.",
+  "license": "MIT",
+  "author": "Subho4531",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Subho4531/CageUP.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Subho4531/CageUP/issues"
+  },
+  "homepage": "https://github.com/Subho4531/CageUP#readme",
   "type": "module",
   "bin": {
     "cageup": "./src/cli.mjs"
