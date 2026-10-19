@@ -10,7 +10,7 @@ cageup opencode
 
 The command will eventually launch OpenCode inside a disposable worker, give it a run-scoped workspace lease, route approved API requests through the ZK egress gateway, and hold all host writes behind a promotion gate.
 
-> **Project status:** CageUP is currently a documentation and reproducibility scaffold. The CLI, Daytona adapter, CageBridge, ZK gateway, promotion scanner, and operator console are planned but not implemented yet.
+> **Project status:** CageUP is currently a documentation, reproducibility, and npm package scaffold. The package entrypoint exists for early integration checks; the Daytona adapter, CageBridge, ZK gateway, promotion scanner, and operator console are not implemented yet.
 
 ## Why CageUP exists
 
@@ -106,20 +106,27 @@ Daytona execution will additionally require provider credentials and configurati
 
 ## Quick start
 
-The current scaffold has no runtime CLI yet. From a clean checkout:
+From a clean checkout:
 
 ```bash
 npm ci
 make test
+npm run pack:check
 ```
 
-`make test` is offline and currently checks that required documentation, configuration, and security-boundary statements exist. It does not claim that the future Daytona runtime is implemented.
+`make test` is offline and currently checks that required documentation, configuration, and security-boundary statements exist. `npm run pack:check` verifies the future npm package contents without publishing. The current CLI entrypoint is intentionally a placeholder until the runtime is implemented.
 
 When the CLI milestone is implemented, the intended workflow will be:
 
 ```bash
 cageup doctor
 cageup opencode
+```
+
+The current scaffold supports an early package smoke check:
+
+```bash
+npx . doctor
 ```
 
 All arguments after `--` should be forwarded to OpenCode:
@@ -197,6 +204,19 @@ Protected execution surfaces include Git hooks, package lifecycle scripts, shell
 ### Evidence boundary
 
 Hash-chained events are tamper-evident evidence. They are not proof that a compromised host is impossible to alter.
+
+## npm package readiness
+
+The package is configured for a future public npm release:
+
+- command name: `cageup`;
+- executable entrypoint: `src/cli.mjs`;
+- package contents are restricted through the `files` allowlist;
+- `LICENSE` is included;
+- `prepublishOnly` runs the offline checks;
+- real provider credentials are not included in the package.
+
+Do not run `npm publish` until the runtime entrypoint is implemented, the package name has been checked on npm, repository metadata has been set, and a release version has been reviewed.
 
 ## Documentation
 

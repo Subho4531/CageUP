@@ -12,7 +12,8 @@ const requiredFiles = [
   '.env.example',
   '.nvmrc',
   'Makefile',
-  'Dockerfile'
+  'Dockerfile',
+  'LICENSE'
 ];
 
 for (const relativePath of requiredFiles) {
