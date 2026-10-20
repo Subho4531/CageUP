@@ -2,14 +2,14 @@
 
 ## Current state
 
-- This is a documentation-first scaffold for CageUP; the runtime, Daytona adapter, CageBridge, ZK gateway, and operator console are not implemented yet.
+- CageUP now contains an offline runtime, Daytona adapter contract, CageBridge, ZK gateway, promotion/evidence modules, persistent session state, and an operator CLI. Live Daytona deployment and a persistent daemon remain opt-in integration work.
 - `PLAN.md` defines the agreed implementation sequence; `docs/architecture.md`, `docs/threat-model.md`, and `docs/demo-script.md` are the current design references.
 - Do not claim kernel-level enforcement, universal malware detection, cryptographic zero-knowledge, or host-wide filesystem access. The hackathon target is a Node/TypeScript control plane around an ephemeral Daytona worker.
 
 ## Runtime and commands
 
 - Use the pinned Node.js version in `.nvmrc` and the committed npm lockfile; do not rely on globally installed packages.
-- `make test` is the canonical offline verification command. It currently validates the documentation scaffold; update it as implementation code is added.
+- `make test` is the canonical offline verification command. It builds the TypeScript runtime and runs the complete offline test suite.
 - The intended user entrypoint is `cageup opencode`; keep CLI argument forwarding and provider selection explicit when implementing it.
 
 ## Security boundaries
@@ -23,7 +23,7 @@
 
 - Keep source files, scripts, runtime configuration, lockfiles, and Docker build inputs inside this repository.
 - Use `.env.example` for configuration shape; never commit secrets or machine-specific absolute paths.
-- Keep Daytona execution opt-in and provide a local simulator for offline tests.
+- Keep Daytona execution opt-in and provide a local simulator for offline tests. The simulator is a test adapter, not a host security boundary: it runs a command as a local child process with an allowlisted environment.
 - Update `README.md` and the relevant design document whenever a command, boundary, or provider behavior changes.
 
 ## Verification workflow

@@ -8,7 +8,7 @@ The intended entrypoint is:
 cageup opencode
 ```
 
-The runtime modules now cover the provider lifecycle, capability-scoped workspace access, boundary credential substitution, evidence, promotion, and rollback. The CLI exposes the operator surface and remains honest when no live run daemon is connected.
+The runtime modules now cover the provider lifecycle, capability-scoped workspace access, boundary credential substitution, evidence, promotion, and rollback. The CLI starts local or selected-provider sessions, persists safe inspection state outside the workspace, and remains honest when control operations require the original in-process provider.
 
 > **Project status:** CageUP now has provider-neutral contracts, an offline simulator, an injectable Daytona adapter, CageBridge, ZK egress routing, hash-chained evidence, promotion quarantine/rollback, and an operator CLI. Live Daytona deployment and a persistent run daemon remain opt-in integration work.
 
@@ -77,7 +77,7 @@ It must never expose the entire Windows filesystem, host credentials, SSH keys, 
 CageUP will use a provider interface so the security logic can be tested without cloud access:
 
 - **Daytona provider:** primary ephemeral execution path for the hackathon demo.
-- **Simulator provider:** deterministic local worker for offline tests and development.
+- **Simulator provider:** deterministic local test adapter for offline development. It is not a host security boundary; Daytona is the intended disposable execution boundary.
 
 ## Repository layout
 
@@ -123,6 +123,8 @@ cageup doctor
 cageup config
 cageup policy
 cageup opencode -- --model <model>
+cageup status
+cageup review
 ```
 
 The package smoke check is:
@@ -146,7 +148,7 @@ Copy the configuration shape without adding secrets:
 cp .env.example .env
 ```
 
-The simulator should be the safe default. Daytona must be explicitly selected and must fail clearly when required configuration is missing.
+The simulator is the offline default for tests and local development, but it must not be treated as equivalent to a remote sandbox. Daytona must be explicitly selected and must fail clearly when required configuration is missing.
 
 Important configuration concepts:
 
@@ -156,23 +158,26 @@ CAGEUP_WORKSPACE=<selected project directory>
 CAGEUP_ZK_GATEWAY_URL=<trusted egress gateway>
 DAYTONA_API_URL=<provider endpoint>
 DAYTONA_API_TOKEN=<local secret, never committed>
+CAGEUP_STATE_DIR=<external state directory, optional>
+CAGEUP_OPENCODE_COMMAND=<command override for local fixtures, optional>
+CAGEUP_COMMAND=<command override for local fixtures, optional>
 ```
 
 ## CLI surface
 
 ```bash
 cageup opencode -- [args...]    # Preserve explicit OpenCode arguments
-cageup status                   # Show active run and lease
-cageup diff                     # Show staged changes and hashes
-cageup review                   # Explain promotion decisions
-cageup promote                  # Promote reviewed files only
-cageup reject                   # Reject staged changes
-cageup revoke                   # Revoke the active lease
-cageup rollback                 # Discard the run and restore approved state
-cageup policy                   # Inspect the active capability policy
+cageup status [--session <id>]  # Show persisted run state
+cageup policy [--session <id>]  # Inspect the persisted capability policy
+cageup diff [--session <id>]    # Show collected changes and hashes
+cageup review [--session <id>]  # Explain promotion decisions
+cageup promote [--session <id>] [--path <path>]... # Promote explicitly reviewed simulator paths
+cageup reject [--session <id>]  # Remain review-gated; no host writes
+cageup revoke [--session <id>]  # Revoke an in-process lease
+cageup rollback [--session <id>] # Destroy an in-process run
 cageup doctor                   # Check local prerequisites
 
-The operator commands return a clear unavailable-state message when no persistent run daemon is connected; they do not fabricate a successful live run.
+Session inspection resolves the explicit `--session <id>` first, then the persisted current-session pointer. The pointer, records, exported simulator results, and promotion staging live in `CAGEUP_STATE_DIR` or `~/.cageup`, never inside the selected workspace. Completed CLI sessions release their provider sandbox. `promote` requires an existing review, a valid lease policy, matching SHA-256 values, and explicit `--path` values or `--all-allowed`; quarantined and denied paths are never promoted. `reject` remains a no-write action. Live Daytona promotion is not enabled by the local session store.
 ```
 
 ## Demo scenario

@@ -34,6 +34,8 @@ Developer terminal
                  OpenCode + staged workspace
 ```
 
+Completed local sessions persist redacted metadata and exported simulator results under an external state directory. The provider workspace is released after collection for the one-shot CLI flow; promotion operates only on the exported, hash-checked result. A persistent daemon is still required for live post-run control of a remote Daytona sandbox.
+
 ## Run lifecycle
 
 1. The CLI resolves the selected project directory.
@@ -155,7 +157,7 @@ interface SandboxProvider {
 }
 ```
 
-The simulator implements this contract locally for offline checks. The Daytona implementation is opt-in and must report missing configuration instead of silently pretending to have run in Daytona.
+The simulator implements this contract locally for offline checks. It is a local child-process test adapter, not a host security boundary. The Daytona implementation is opt-in and must report missing configuration instead of silently pretending to have run in Daytona.
 
 ## Planned package boundaries
 

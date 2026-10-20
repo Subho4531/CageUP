@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdtemp, readFile, readdir, rm, stat, lstat, cp } from 'node:fs/promises';
+import { cp, copyFile, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 import type {
   FileManifestEntry,
@@ -16,24 +16,51 @@ interface SimulatorOptions {
   readonly tempRoot?: string;
   readonly clock?: () => Date;
   readonly idFactory?: () => string;
+  readonly env?: Readonly<NodeJS.ProcessEnv>;
 }
 
 interface SimulatorState {
   readonly handle: SandboxHandle;
   readonly root: string;
+  readonly workspaceRoot: string;
   uploaded: boolean;
   destroyed: boolean;
 }
 
+const SAFE_ENV_KEYS = [
+  'PATH',
+  'HOME',
+  'USER',
+  'LOGNAME',
+  'TMPDIR',
+  'TMP',
+  'TEMP',
+  'LANG',
+  'LC_ALL',
+  'LC_CTYPE',
+  'TZ',
+  'SystemRoot',
+  'WINDIR',
+  'USERPROFILE',
+  'ComSpec',
+  'PATHEXT'
+] as const;
+
 export class SimulatorProvider implements SandboxProvider {
   private readonly states = new Map<string, SimulatorState>();
-  private readonly options: { readonly tempRoot: string | undefined; readonly clock: () => Date; readonly idFactory: () => string };
+  private readonly options: {
+    readonly tempRoot: string | undefined;
+    readonly clock: () => Date;
+    readonly idFactory: () => string;
+    readonly env: Readonly<NodeJS.ProcessEnv>;
+  };
 
   constructor(options: SimulatorOptions = {}) {
     this.options = {
       tempRoot: options.tempRoot,
       clock: options.clock ?? (() => new Date()),
-      idFactory: options.idFactory ?? (() => randomUUID())
+      idFactory: options.idFactory ?? (() => randomUUID()),
+      env: options.env ?? process.env
     };
   }
 
@@ -48,7 +75,7 @@ export class SimulatorProvider implements SandboxProvider {
       id: `simulator_${this.options.idFactory()}`,
       createdAt: this.options.clock().toISOString()
     };
-    this.states.set(handle.id, { handle, root, uploaded: false, destroyed: false });
+    this.states.set(handle.id, { handle, root, workspaceRoot: resolve(spec.workspaceRoot), uploaded: false, destroyed: false });
     return handle;
   }
 
@@ -56,9 +83,10 @@ export class SimulatorProvider implements SandboxProvider {
     const state = this.state(handle);
     if (state.uploaded) throw new Error('workspace has already been uploaded');
     const sourcePath = resolve(source);
-    const sourceStats = await stat(sourcePath).catch(() => undefined);
+    const sourceStats = await lstat(sourcePath).catch(() => undefined);
+    if (sourceStats?.isSymbolicLink()) throw new Error('workspace upload does not support symlinks: .');
     if (!sourceStats?.isDirectory()) throw new Error('workspace source must be an existing directory');
-    await cp(sourcePath, state.root, { recursive: true, verbatimSymlinks: true, errorOnExist: false });
+    await copyWorkspace(sourcePath, state.root);
     state.uploaded = true;
   }
 
@@ -90,6 +118,21 @@ export class SimulatorProvider implements SandboxProvider {
     };
   }
 
+  async exportWorkspace(handle: SandboxHandle, destination: string): Promise<void> {
+    const state = this.state(handle);
+    if (!state.uploaded) throw new Error('workspace must be uploaded before export');
+    const destinationPath = resolve(destination);
+    await assertNoSymlinkAncestors(destinationPath);
+    const workspaceCanonical = await canonicalPath(state.workspaceRoot);
+    const destinationCanonical = await canonicalPath(destinationPath);
+    if (isWithin(workspaceCanonical, destinationCanonical)) {
+      throw new Error('export destination must be outside the host workspace');
+    }
+    await rm(destinationPath, { recursive: true, force: true });
+    await mkdir(dirname(destinationPath), { recursive: true });
+    await cp(state.root, destinationPath, { recursive: true, verbatimSymlinks: true, errorOnExist: false });
+  }
+
   async destroy(handle: SandboxHandle): Promise<void> {
     const state = this.states.get(handle.id);
     if (!state || state.destroyed) return;
@@ -118,7 +161,12 @@ export class SimulatorProvider implements SandboxProvider {
 
   private run(command: string, args: readonly string[], cwd: string): Promise<{ exitCode: number }> {
     return new Promise((resolvePromise, reject) => {
-      const child = spawn(command, [...args], { cwd, shell: false, env: { ...process.env, CAGEUP_SIMULATOR: '1' } });
+      const child = spawn(command, [...args], {
+        cwd,
+        shell: false,
+        env: safeEnvironment(this.options.env),
+        stdio: ['ignore', 'ignore', 'ignore']
+      });
       child.on('error', reject);
       child.on('close', (exitCode) => resolvePromise({ exitCode: exitCode ?? 1 }));
     });
@@ -145,4 +193,72 @@ export class SimulatorProvider implements SandboxProvider {
     await visit(root);
     return entries.sort((a, b) => a.path.localeCompare(b.path));
   }
+}
+
+async function copyWorkspace(source: string, destination: string): Promise<void> {
+  await mkdir(destination, { recursive: true });
+  await copyDirectoryContents(source, destination, '');
+}
+
+async function copyDirectoryContents(source: string, destination: string, relativeDirectory: string): Promise<void> {
+  for (const name of (await readdir(source)).sort()) {
+    const sourcePath = join(source, name);
+    const relativePath = relativeDirectory ? `${relativeDirectory}/${name}` : name;
+    const destinationPath = join(destination, name);
+    const info = await lstat(sourcePath);
+    if (info.isSymbolicLink()) {
+      throw new Error(`workspace upload does not support symlinks: ${relativePath}`);
+    }
+    if (info.isDirectory()) {
+      await mkdir(destinationPath, { recursive: true });
+      await copyDirectoryContents(sourcePath, destinationPath, relativePath);
+    } else if (info.isFile()) {
+      await copyFile(sourcePath, destinationPath);
+    } else {
+      throw new Error(`workspace upload does not support special files: ${relativePath}`);
+    }
+  }
+}
+
+function safeEnvironment(source: Readonly<NodeJS.ProcessEnv>): NodeJS.ProcessEnv {
+  const environment: NodeJS.ProcessEnv = { CAGEUP_SIMULATOR: '1' };
+  for (const key of SAFE_ENV_KEYS) {
+    const value = source[key];
+    if (value !== undefined) environment[key] = value;
+  }
+  return environment;
+}
+
+async function assertNoSymlinkAncestors(path: string): Promise<void> {
+  let current = resolve(path);
+  while (true) {
+    try {
+      if ((await lstat(current)).isSymbolicLink()) {
+        throw new Error(`export destination contains a symlinked path component: ${current}`);
+      }
+    } catch (error) {
+      if (!isNodeError(error, 'ENOENT')) throw error;
+    }
+    const parent = dirname(current);
+    if (parent === current) return;
+    current = parent;
+  }
+}
+
+async function canonicalPath(path: string): Promise<string> {
+  try {
+    return await realpath(path);
+  } catch (error) {
+    if (isNodeError(error, 'ENOENT')) return resolve(path);
+    throw error;
+  }
+}
+
+function isNodeError(error: unknown, code: string): error is NodeJS.ErrnoException {
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === code;
+}
+
+function isWithin(parent: string, candidate: string): boolean {
+  const fromParent = relative(resolve(parent), resolve(candidate));
+  return fromParent === '' || (fromParent !== '..' && !fromParent.startsWith(`..${process.platform === 'win32' ? '\\' : '/'}`) && !isAbsolute(fromParent));
 }

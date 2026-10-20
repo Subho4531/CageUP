@@ -4,7 +4,7 @@
 
 **Current phase:** integrated offline runtime — provider, bridge, gateway, promotion, evidence, and operator surfaces.
 
-The repository now contains the first provider-neutral TypeScript contracts, strict configuration loader, and compiled CLI entrypoint. Sandbox, bridge, gateway, and promotion behavior remain future phases.
+The repository contains provider-neutral contracts, strict configuration validation, provider adapters, the control plane, persistent sessions, promotion/evidence behavior, and the operator CLI. Live Daytona deployment and a persistent daemon remain future integration work.
 
 ## Product goal
 
@@ -55,7 +55,7 @@ Creates, initializes, executes, collects, and destroys ephemeral Daytona sandbox
 
 ### Simulator provider
 
-Implements the same provider interface locally so core behavior and tests work without Daytona credentials or network access.
+Implements the same provider interface locally so core behavior and tests work without Daytona credentials or network access. It is a deterministic test adapter, not a host isolation boundary.
 
 ### ZK egress gateway
 
@@ -89,7 +89,7 @@ Stores redacted, hash-chained run events such as lease grants, ZK requests, bloc
 
 **Exit condition:** the complete happy path works offline.
 
-**Status:** complete offline. `SimulatorProvider` implements isolated create/upload/execute/collect/destroy behavior with lifecycle tests.
+**Status:** complete offline. `SimulatorProvider` implements disposable fixture workspaces, symlink rejection, restricted child environments, command forwarding, export, collect, and destroy behavior. It must not be presented as equivalent to Daytona isolation.
 
 ### 3. ZK Key Injection
 
@@ -148,7 +148,7 @@ Stores redacted, hash-chained run events such as lease grants, ZK requests, bloc
 
 **Exit condition:** the demo can be run from a clean checkout using the documented commands.
 
-**Status:** operator surface complete for offline operation. The CLI exposes the documented commands, preserves OpenCode argument boundaries, redacts configuration secrets, and reports absent live state honestly. Persistent daemon wiring remains future integration work.
+**Status:** operator surface complete for offline operation. The CLI starts simulator or selected-provider sessions, persists redacted session records outside the workspace, preserves OpenCode argument boundaries, supports status/policy/diff/review inspection after restart, releases completed provider sandboxes, promotes explicitly reviewed simulator paths, redacts configuration secrets, and reports provider recovery limits honestly. Host promotion remains lease- and hash-gated; persistent daemon wiring remains future integration work.
 
 ## Security acceptance criteria
 
