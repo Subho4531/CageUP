@@ -67,6 +67,9 @@ export interface PromotionDecision {
 export type RuntimeEventType =
   | 'RUN_CREATED'
   | 'SANDBOX_CREATED'
+  | 'COMMAND_STARTED'
+  | 'COMMAND_EXITED'
+  | 'COMMAND_FAILED'
   | 'LEASE_GRANTED'
   | 'ZK_ROUTE_ASSIGNED'
   | 'EGRESS_ALLOWED'

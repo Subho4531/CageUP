@@ -89,6 +89,8 @@ Stores redacted, hash-chained run events such as lease grants, ZK requests, bloc
 
 **Exit condition:** the complete happy path works offline.
 
+**Status:** in progress. The provider lifecycle and isolated workspace tests are being implemented before adding lease orchestration.
+
 ### 3. ZK Key Injection
 
 - Provide run-scoped placeholder keys to the sandbox.

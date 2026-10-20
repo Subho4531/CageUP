@@ -150,7 +150,7 @@ interface SandboxProvider {
   createRun(spec: RunSpec): Promise<SandboxHandle>;
   uploadWorkspace(handle: SandboxHandle, source: string): Promise<void>;
   execute(handle: SandboxHandle, command: string): AsyncIterable<RuntimeEvent>;
-  collectWorkspace(handle: SandboxHandle): Promise<WorkspaceArchive>;
+  collectWorkspace(handle: SandboxHandle): Promise<WorkspaceManifest>;
   destroy(handle: SandboxHandle): Promise<void>;
 }
 ```

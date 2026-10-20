@@ -10,7 +10,7 @@ cageup opencode
 
 The command will eventually launch OpenCode inside a disposable worker, give it a run-scoped workspace lease, route approved API requests through the ZK egress gateway, and hold all host writes behind a promotion gate.
 
-> **Project status:** CageUP now has its first TypeScript contracts and configuration loader. The Daytona adapter, CageBridge, ZK gateway, promotion scanner, and operator console are not implemented yet.
+> **Project status:** CageUP now has TypeScript contracts, configuration validation, and an offline simulator provider. The Daytona adapter, CageBridge, ZK gateway, promotion scanner, and operator console are not implemented yet.
 
 ## Why CageUP exists
 
