@@ -4,7 +4,7 @@
 
 CageUP is a Node/TypeScript control plane around an ephemeral Daytona worker. The control plane owns lifecycle, capability policy, ZK Key routing, evidence, and promotion. Daytona supplies the primary disposable execution boundary.
 
-The project does not currently implement a Windows kernel driver or claim to replace the isolation guarantees of the provider.
+The project does not implement a Windows kernel driver or claim to replace the isolation guarantees of the provider.
 
 ## Runtime topology
 
@@ -42,7 +42,7 @@ Developer terminal
 4. A Daytona sandbox is created.
 5. The workspace is uploaded to a sandbox path such as `/workspace/project`.
 6. A run-scoped capability lease and ZK placeholders are created.
-7. OpenCode starts inside the sandbox; CLI arguments are forwarded explicitly.
+7. OpenCode starts inside the sandbox; CLI arguments are forwarded explicitly as an argument array.
 8. Runtime, network, and workspace events are recorded in redacted form.
 9. The sandbox output is collected and compared with the baseline manifest.
 10. The promotion scanner produces `allow`, `quarantine`, or `deny` decisions.
@@ -76,7 +76,7 @@ run.status
 - Do not expose arbitrary host shell execution.
 - Keep host promotion separate from sandbox writes.
 
-For a remote Daytona worker, the bridge should use an authenticated connector or relay. A Windows drive share must not be used as a shortcut around policy.
+For a remote Daytona worker, the bridge should use an authenticated connector or relay. A Windows drive share must not be used as a shortcut around policy. The current local bridge is implemented and tested; remote relay wiring remains deployment-specific.
 
 ## Capability leases
 
@@ -117,7 +117,7 @@ Approved API
 
 The gateway must reject an approved placeholder used against an unapproved destination. It must not perform unrestricted string replacement or log the substituted request.
 
-The first implementation should use an explicit gateway endpoint or proxy contract. A normal end-to-end HTTPS request cannot be modified by a proxy without a deliberate termination and re-encryption design.
+The current gateway uses an explicit forwarding contract with an injectable fetch implementation. A normal end-to-end HTTPS request cannot be modified by a proxy without a deliberate termination and re-encryption design.
 
 ## Workspace manifests and promotion
 
@@ -149,7 +149,7 @@ Core policy code must depend on a provider interface rather than Daytona-specifi
 interface SandboxProvider {
   createRun(spec: RunSpec): Promise<SandboxHandle>;
   uploadWorkspace(handle: SandboxHandle, source: string): Promise<void>;
-  execute(handle: SandboxHandle, command: string): AsyncIterable<RuntimeEvent>;
+  execute(handle: SandboxHandle, command: string, args: readonly string[]): AsyncIterable<RuntimeEvent>;
   collectWorkspace(handle: SandboxHandle): Promise<WorkspaceManifest>;
   destroy(handle: SandboxHandle): Promise<void>;
 }

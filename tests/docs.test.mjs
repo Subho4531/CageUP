@@ -28,9 +28,10 @@ test('documentation scaffold passes the repository contract check', async () => 
   });
 });
 
-test('README documents the current not-yet-implemented runtime state', async () => {
+test('README documents the implemented offline runtime and honest live-state boundary', async () => {
   const readme = await readFile(resolve(root, 'README.md'), 'utf8');
-  assert.match(readme, /TypeScript contracts, configuration validation, and an offline simulator provider/);
+  assert.match(readme, /provider-neutral contracts, an offline simulator, an injectable Daytona adapter/);
+  assert.match(readme, /persistent run daemon remain opt-in integration work/);
   assert.match(readme, /cageup opencode/);
   assert.match(readme, /ZK Key Injection/);
 });

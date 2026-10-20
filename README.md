@@ -8,9 +8,9 @@ The intended entrypoint is:
 cageup opencode
 ```
 
-The command will eventually launch OpenCode inside a disposable worker, give it a run-scoped workspace lease, route approved API requests through the ZK egress gateway, and hold all host writes behind a promotion gate.
+The runtime modules now cover the provider lifecycle, capability-scoped workspace access, boundary credential substitution, evidence, promotion, and rollback. The CLI exposes the operator surface and remains honest when no live run daemon is connected.
 
-> **Project status:** CageUP now has TypeScript contracts, configuration validation, and an offline simulator provider. The Daytona adapter, CageBridge, ZK gateway, promotion scanner, and operator console are not implemented yet.
+> **Project status:** CageUP now has provider-neutral contracts, an offline simulator, an injectable Daytona adapter, CageBridge, ZK egress routing, hash-chained evidence, promotion quarantine/rollback, and an operator CLI. Live Daytona deployment and a persistent run daemon remain opt-in integration work.
 
 ## Why CageUP exists
 
@@ -34,7 +34,7 @@ CageUP uses four boundaries instead:
 
 The project does not claim universal malware detection, a custom Windows kernel boundary, or absolute protection from a fully compromised host.
 
-## Planned architecture
+## Architecture
 
 ```text
                          Operator / CLI
@@ -59,7 +59,7 @@ The project does not claim universal malware detection, a custom Windows kernel 
 
 CageBridge is a capability gateway, not a full filesystem mount. Its default scope is the selected project directory.
 
-Planned agent-facing operations include:
+Implemented agent-facing operations include:
 
 ```text
 workspace.list
@@ -114,16 +114,18 @@ make test
 npm run pack:check
 ```
 
-`make test` is offline and currently checks that required documentation, configuration, and security-boundary statements exist. `npm run pack:check` verifies the future npm package contents without publishing. The current CLI entrypoint is intentionally a placeholder until the runtime is implemented.
+`make test` is offline and runs the TypeScript build plus the provider, bridge, gateway, evidence, promotion, rollback, and CLI tests. `npm run pack:check` verifies the npm package contents without publishing. No live provider or daemon is required for these checks.
 
-When the CLI milestone is implemented, the intended workflow will be:
+The current operator workflow is:
 
 ```bash
 cageup doctor
-cageup opencode
+cageup config
+cageup policy
+cageup opencode -- --model <model>
 ```
 
-The current scaffold supports an early package smoke check:
+The package smoke check is:
 
 ```bash
 npm run build
@@ -156,10 +158,10 @@ DAYTONA_API_URL=<provider endpoint>
 DAYTONA_API_TOKEN=<local secret, never committed>
 ```
 
-## Planned CLI
+## CLI surface
 
 ```bash
-cageup opencode                 # Start OpenCode in a governed run
+cageup opencode -- [args...]    # Preserve explicit OpenCode arguments
 cageup status                   # Show active run and lease
 cageup diff                     # Show staged changes and hashes
 cageup review                   # Explain promotion decisions
@@ -169,6 +171,8 @@ cageup revoke                   # Revoke the active lease
 cageup rollback                 # Discard the run and restore approved state
 cageup policy                   # Inspect the active capability policy
 cageup doctor                   # Check local prerequisites
+
+The operator commands return a clear unavailable-state message when no persistent run daemon is connected; they do not fabricate a successful live run.
 ```
 
 ## Demo scenario

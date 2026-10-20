@@ -2,7 +2,7 @@
 
 ## Status
 
-**Current phase:** phase 1 — shared contracts and configuration.
+**Current phase:** integrated offline runtime — provider, bridge, gateway, promotion, evidence, and operator surfaces.
 
 The repository now contains the first provider-neutral TypeScript contracts, strict configuration loader, and compiled CLI entrypoint. Sandbox, bridge, gateway, and promotion behavior remain future phases.
 
@@ -79,7 +79,7 @@ Stores redacted, hash-chained run events such as lease grants, ZK requests, bloc
 
 **Exit condition:** all packages can import shared contracts without provider-specific types leaking into core policy code.
 
-**Status:** complete for the initial scaffold. Contracts live in `src/core/contracts.ts`; configuration validation lives in `src/core/config.ts`; `npm test` compiles and exercises them offline.
+**Status:** complete. Contracts live in `src/core/contracts.ts`; configuration validation lives in `src/core/config.ts`; `npm test` compiles and exercises them offline.
 
 ### 2. Local simulator
 
@@ -89,7 +89,7 @@ Stores redacted, hash-chained run events such as lease grants, ZK requests, bloc
 
 **Exit condition:** the complete happy path works offline.
 
-**Status:** in progress. The provider lifecycle and isolated workspace tests are being implemented before adding lease orchestration.
+**Status:** complete offline. `SimulatorProvider` implements isolated create/upload/execute/collect/destroy behavior with lifecycle tests.
 
 ### 3. ZK Key Injection
 
@@ -101,6 +101,8 @@ Stores redacted, hash-chained run events such as lease grants, ZK requests, bloc
 
 **Exit condition:** a fixture can call an approved test API without the real key appearing in its environment, files, stdout, or evidence log.
 
+**Status:** complete offline. `ZkEgressGateway` uses explicit run/lease/domain/method/path routes, injects credentials only at forwarding time, and redacts diagnostics and events.
+
 ### 4. CageBridge
 
 - Implement workspace list/read/write/diff operations.
@@ -110,6 +112,8 @@ Stores redacted, hash-chained run events such as lease grants, ZK requests, bloc
 - Keep lifecycle and policy actions on the control API.
 
 **Exit condition:** the fixture cannot read outside the selected workspace or execute a host shell command.
+
+**Status:** complete offline. `CageBridge` enforces lease operations, expiry, normalized paths, and symlink containment without exposing process execution.
 
 ### 5. Promotion and rollback
 
@@ -122,6 +126,8 @@ Stores redacted, hash-chained run events such as lease grants, ZK requests, bloc
 
 **Exit condition:** a fixture that creates a Git hook or `postinstall` script is quarantined and cannot modify the host project automatically.
 
+**Status:** complete offline. Promotion planning, protected-surface classification, external staging, review-gated promotion, and rollback are covered by tests.
+
 ### 6. Daytona adapter
 
 - Implement real sandbox creation and teardown.
@@ -132,6 +138,8 @@ Stores redacted, hash-chained run events such as lease grants, ZK requests, bloc
 
 **Exit condition:** the same contract-level scenario can run with Daytona by configuration, with remote-workspace behavior documented.
 
+**Status:** adapter complete and network-independent. `DaytonaProvider` uses an injectable HTTP client and explicit endpoint map; live Daytona API compatibility remains deployment-specific and opt-in.
+
 ### 7. Operator experience
 
 - Add `status`, `diff`, `review`, `promote`, `revoke`, `rollback`, `policy`, and `doctor` commands.
@@ -139,6 +147,8 @@ Stores redacted, hash-chained run events such as lease grants, ZK requests, bloc
 - Make ZK injection, quarantine, lease, and rollback states obvious.
 
 **Exit condition:** the demo can be run from a clean checkout using the documented commands.
+
+**Status:** operator surface complete for offline operation. The CLI exposes the documented commands, preserves OpenCode argument boundaries, redacts configuration secrets, and reports absent live state honestly. Persistent daemon wiring remains future integration work.
 
 ## Security acceptance criteria
 
